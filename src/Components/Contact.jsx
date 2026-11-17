@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import emailjs from "@emailjs/browser";
 
 const SOCIALS = [
   {
@@ -23,12 +24,12 @@ const SOCIALS = [
     desc: "amansinghhdi951@gmail.com",
   },
   {
-  label: "WhatsApp",
-  icon: "💬",
-  href: "https://wa.me/917007281970",
-  color: "#34d399",
-  desc: "@aman_dev",
-}
+    label: "WhatsApp",
+    icon: "💬",
+    href: "https://wa.me/917007281970",
+    color: "#34d399",
+    desc: "@aman_dev",
+  },
 ];
 
 function useInView(threshold = 0.12) {
@@ -41,7 +42,7 @@ function useInView(threshold = 0.12) {
     );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
-  }, []);
+  }, [threshold]);
   return [ref, inView];
 }
 
@@ -50,10 +51,11 @@ export default function Contact() {
   const [formRef,   formInView]   = useInView(0.1);
   const [infoRef,   infoInView]   = useInView(0.1);
 
-  const [form,    setForm]    = useState({ name: "", email: "", subject: "", message: "" });
-  const [sending, setSending] = useState(false);
-  const [sent,    setSent]    = useState(false);
-  const [errors,  setErrors]  = useState({});
+  const [form,      setForm]      = useState({ name: "", email: "", subject: "", message: "" });
+  const [sending,   setSending]   = useState(false);
+  const [sent,      setSent]      = useState(false);
+  const [errors,    setErrors]    = useState({});
+  const [sendError, setSendError] = useState("");
 
   const validate = () => {
     const e = {};
@@ -64,13 +66,33 @@ export default function Contact() {
     return e;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
+    setSendError("");
     setSending(true);
-    setTimeout(() => { setSending(false); setSent(true); }, 1800);
+
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          name: form.name,
+          email: form.email,
+          subject: form.subject || "New message from portfolio",
+          message: form.message,
+        },
+        { publicKey: import.meta.env.VITE_EMAILJS_PUBLIC_KEY }
+      );
+      setSent(true);
+    } catch (err) {
+      console.error("EmailJS error:", err);
+      setSendError("Message could not be sent. Please try again or email me directly.");
+    } finally {
+      setSending(false);
+    }
   };
 
   const inputStyle = (field) => ({
@@ -231,6 +253,7 @@ export default function Contact() {
                           <input
                             className="contact-input"
                             type="text"
+                            name="name"
                             placeholder="Aman Singh"
                             value={form.name}
                             onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -245,6 +268,7 @@ export default function Contact() {
                           <input
                             className="contact-input"
                             type="email"
+                            name="email"
                             placeholder="you@email.com"
                             value={form.email}
                             onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
@@ -262,6 +286,7 @@ export default function Contact() {
                         <input
                           className="contact-input"
                           type="text"
+                          name="subject"
                           placeholder="Freelance project / Job opportunity / Just saying hi"
                           value={form.subject}
                           onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
@@ -277,6 +302,7 @@ export default function Contact() {
                         <textarea
                           className="contact-input"
                           rows={5}
+                          name="message"
                           placeholder="Tell me about your project or opportunity..."
                           value={form.message}
                           onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -284,6 +310,13 @@ export default function Contact() {
                         />
                         {errors.message && <span style={{ fontFamily:"'DM Mono',monospace", fontSize:9.5, color:"#f87171", marginTop:4, display:"block" }}>{errors.message}</span>}
                       </div>
+
+                      {/* Send error (EmailJS failure) */}
+                      {sendError && (
+                        <span style={{ fontFamily:"'DM Mono',monospace", fontSize:10.5, color:"#f87171", display:"block", textAlign:"center", lineHeight:1.6 }}>
+                          {sendError}
+                        </span>
+                      )}
 
                       {/* Submit */}
                       <button

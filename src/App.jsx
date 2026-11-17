@@ -9,6 +9,7 @@ import Contact from './Components/Contact'
 import Achievements from './Components/Certification'
 import Education from './Components/Education'
 import GlobalStyles from './Components/GlobalStyle'
+import Experience from './Components/Experience'
 
 
 function AppShell() {
@@ -23,6 +24,7 @@ function AppShell() {
         <section id="about">        <About />        </section>
         <section id="projects">     <Projects />     </section>
         <section id="skills">       <Skills />       </section>
+        <section id="experience">       <Experience/>       </section>
         <section id="achievements"> <Achievements /> </section>
         <section id="education">    <Education />    </section>
         <section id="contact">      <Contact />      </section>
